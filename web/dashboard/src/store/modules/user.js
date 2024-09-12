@@ -53,7 +53,7 @@ const actions = {
         const {username, password} = userInfo
         return new Promise((resolve, reject) => {
             commit("LOGIN")
-            login({username: username.trim(), password: password}).then(response => {
+            login({username: username.trim(), password: password, authMethod: "jwt"}).then(response => {
                 commit("LOGIN")
                 resolve(response)
             }).catch(error => {
@@ -110,6 +110,7 @@ const actions = {
     },
     logout({commit}) {
         logout().then(() => {
+            localStorage.removeItem("auth_token")
             commit("LOGOUT")
             commit("SET_ROLES", [])
             resetRouter()

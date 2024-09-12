@@ -5,7 +5,7 @@ import i18n, {getLanguage} from "@/i18n"
 
 const instance = axios.create({
     baseURL: "/kubepi", // url = base url + request url
-    withCredentials: true,
+    withCredentials: false,
     timeout: 60000 // request timeout, default 1 min
 })
 
@@ -13,6 +13,10 @@ const instance = axios.create({
 instance.interceptors.request.use(
     config => {
         config.headers["lang"] = getLanguage()
+        const token = localStorage.getItem("auth_token")
+        if (token) {
+            config.headers["Authorization"] = `Bearer ${token}`
+        }
         let url = config.url
         const ns = sessionStorage.getItem("namespace")
         if (!config.params) {
@@ -101,6 +105,12 @@ const promise = (request, loading = {}) => {
     return new Promise((resolve, reject) => {
         loading.status = true
         request.then(response => {
+            // 强制登录使用jwt token，解码出jwt token中的用户信息
+            if (response.config.url === "/api/v1/sessions" && typeof response.data === "string") {
+                // localStorage.setItem("auth_token", response.data)
+                // const jwtResponse = JSON.parse(decodeURIComponent(encodeURIComponent(atob(response.data.split(".")[1]))))
+                // resolve({success: true, data: jwtResponse})
+            }
             resolve(response.data)
             loading.status = false
         }).catch(error => {
