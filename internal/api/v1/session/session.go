@@ -2,8 +2,11 @@ package session
 
 import (
 	goContext "context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -32,7 +35,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var jwtMaxAge = 10 * time.Minute
+var jwtMaxAge = 3 * 24 * time.Hour
 
 type Handler struct {
 	userService        user.Service
@@ -160,6 +163,18 @@ func (h *Handler) Login() iris.Handler {
 			}
 			ctx.StatusCode(iris.StatusOK)
 			ctx.Values().Set("token", token)
+			profileToken := strings.Split(string(token), ".")[1]
+			tokenData, err := base64.StdEncoding.DecodeString(profileToken)
+			if err != nil {
+				ctx.StatusCode(iris.StatusInternalServerError)
+				ctx.Values().Set("message", err.Error())
+			}
+			if err := json.Unmarshal(tokenData, &profile); err != nil {
+				ctx.StatusCode(iris.StatusInternalServerError)
+				ctx.Values().Set("message", err.Error())
+			}
+			sess := server.SessionMgr.Start(ctx)
+			sess.Set("profile", profile)
 			return
 		default:
 			sId := ctx.GetCookie(server.SessionCookieName)
@@ -414,9 +429,56 @@ func (h *Handler) GetClusterProfile() iris.Handler {
 	}
 }
 
+func jwtHandler() iris.Handler {
+	verifier := jwt.NewVerifier(jwt.HS256, server.Config().Spec.Jwt.Key)
+	verifier.WithDefaultBlocklist()
+	verifyMiddleware := verifier.Verify(func() interface{} {
+		return new(UserProfile)
+	})
+
+	return func(ctx *context.Context) {
+		if ctx.Method() == http.MethodPost && ctx.Path() == "/kubepi/api/v1/sessions" {
+			ctx.Next()
+			return
+		}
+
+		verifyMiddleware(ctx)
+	}
+}
+
+func authHandler() iris.Handler {
+	return func(ctx *context.Context) {
+		if ctx.Method() == http.MethodPost && ctx.Path() == "/kubepi/api/v1/sessions" {
+			ctx.Next()
+			return
+		}
+
+		var p UserProfile
+		sess := server.SessionMgr.Start(ctx)
+		if ctx.GetHeader("Authorization") != "" {
+			pr := jwt.Get(ctx).(*UserProfile)
+			p = *pr
+		} else {
+			p = sess.Get("profile").(UserProfile)
+		}
+
+		if p.Name == "" {
+			ctx.Values().Set("message", "please login")
+			ctx.StopWithStatus(iris.StatusUnauthorized)
+			return
+		}
+
+		sess.Set("profile", p)
+		ctx.Values().Set("profile", p)
+		ctx.Next()
+	}
+}
+
 func Install(parent iris.Party) {
 	handler := NewHandler()
 	sp := parent.Party("/sessions")
+	sp.Use(jwtHandler())
+	sp.Use(authHandler())
 	sp.Post("", handler.Login())
 	sp.Delete("", handler.Logout())
 	sp.Get("", handler.GetProfile())
