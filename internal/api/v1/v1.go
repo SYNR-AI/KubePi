@@ -61,7 +61,6 @@ func authHandler() iris.Handler {
 		if ctx.GetHeader("Authorization") != "" {
 			pr := jwt.Get(ctx).(*session.UserProfile)
 			p = *pr
-
 		} else {
 			p = server.SessionMgr.Start(ctx).Get("profile").(session.UserProfile)
 		}
@@ -408,11 +407,11 @@ func WarpedJwtHandler() iris.Handler {
 		return new(session.UserProfile)
 	})
 	return func(ctx *context.Context) {
-		sess := server.SessionMgr.Start(ctx)
-		if sess.Get("profile") != nil {
-			ctx.Next()
-			return
-		}
+		//sess := server.SessionMgr.Start(ctx)
+		//if sess.Get("profile") != nil {
+		//	ctx.Next()
+		//	return
+		//}
 		verifyMiddleware(ctx)
 	}
 }
