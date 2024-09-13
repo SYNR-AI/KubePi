@@ -19,7 +19,11 @@ export class TerminalService {
       }
       return baseUrl
     }()
-    return this.http.get<any>(url)
+    const headers: any = {}
+    if (localStorage.getItem("auth_token")) {
+      headers.authorization = `Bearer ${localStorage.getItem("auth_token")}`
+    }
+    return this.http.get<any>(url, headers)
   }
   createNodeShellTerminalSession(clusterName: string, nodeName: string): Observable<any> {
     const url = function () {
@@ -30,6 +34,6 @@ export class TerminalService {
     if (localStorage.getItem("auth_token")) {
       headers.authorization = `Bearer ${localStorage.getItem("auth_token")}`
     }
-    return this.http.get<any>(url)
+    return this.http.get<any>(url, headers)
   }
 }
