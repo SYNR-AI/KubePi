@@ -26,6 +26,10 @@ export class TerminalService {
       let baseUrl = `/kubepi/api/v1/clusters/${clusterName}/node_terminal/session?nodeName=${nodeName}`
       return baseUrl
     }()
+    const headers: any = {}
+    if (localStorage.getItem("auth_token")) {
+      headers.authorization = `Bearer ${localStorage.getItem("auth_token")}`
+    }
     return this.http.get<any>(url)
   }
 }

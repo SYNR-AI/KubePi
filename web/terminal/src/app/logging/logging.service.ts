@@ -40,6 +40,10 @@ export class LoggingService {
       }
       return baseUrl
     }()
-    return this.http.get<any>(url)
+    const headers: any = {}
+    if (localStorage.getItem("auth_token")) {
+      headers.authorization = `Bearer ${localStorage.getItem("auth_token")}`
+    }
+    return this.http.get<any>(url, headers)
   }
 }
