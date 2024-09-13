@@ -20,8 +20,10 @@ export class TerminalService {
       return baseUrl
     }()
     const headers: any = {}
-    if (localStorage.getItem("auth_token")) {
-      headers.authorization = `Bearer ${localStorage.getItem("auth_token")}`
+    const token = localStorage.getItem("auth_token")
+    console.log("createTerminalSession ---->", token)
+    if (token) {
+      headers.authorization = `Bearer ${token}`
     }
     return this.http.get<any>(url, headers)
   }
@@ -31,8 +33,10 @@ export class TerminalService {
       return baseUrl
     }()
     const headers: any = {}
-    if (localStorage.getItem("auth_token")) {
-      headers.authorization = `Bearer ${localStorage.getItem("auth_token")}`
+    const token = localStorage.getItem("auth_token")
+    console.log("createNodeShellTerminalSession ---->", token)
+    if (token) {
+      headers.authorization = `Bearer ${token}`
     }
     return this.http.get<any>(url, headers)
   }
