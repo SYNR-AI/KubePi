@@ -156,7 +156,9 @@ export class NodeShellTerminalComponent implements AfterViewInit {
     try {
       const {data} = await this.terminalService.createNodeShellTerminalSession(this.clusterName, this.nodeName).toPromise()
       const id = data.id
-      this.conn_ = new SockJS(`/kubepi/api/v1/ws/terminal/sockjs?${id}`);
+      const token = localStorage.getItem("auth_token")
+      const tokenParam = token ? `&token=${token}` : ''
+      this.conn_ = new SockJS(`/kubepi/api/v1/ws/terminal/sockjs?${id}${tokenParam}`);
       this.conn_.onopen = this.onConnectionOpen.bind(this, id);
       this.conn_.onmessage = this.onConnectionMessage.bind(this);
       this.conn_.onclose = this.onConnectionClose.bind(this);

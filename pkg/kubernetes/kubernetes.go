@@ -555,6 +555,7 @@ func (k *Kubernetes) Client() (*kubernetes.Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cfg.Timeout = 15 * time.Minute // default 0 means no timeout
 	return kubernetes.NewForConfig(cfg)
 }
 

@@ -74,7 +74,9 @@ export class LoggingComponent implements AfterViewInit {
     try {
       const {data} = await this.loggingService.createLoggingSession(this.clusterName, this.namespace, this.podName, this.container, this.tailLines, this.follow, this.previous,this.timestamps).toPromise()
       const id = data.id
-      this.conn_ = new SockJS(`/kubepi/api/v1/ws/logging/sockjs?${id}`)
+      const token = localStorage.getItem("auth_token")
+      const tokenParam = token ? `&token=${token}` : ''
+      this.conn_ = new SockJS(`/kubepi/api/v1/ws/logging/sockjs?${id}${tokenParam}`)
       this.conn_.onopen = () => {
         this.conn_.send(JSON.stringify({SessionID: id}))
         this.conn_.onmessage = (msg) => {

@@ -42,10 +42,7 @@ export class LoggingService {
     }()
     const headers: any = {}
     const token = localStorage.getItem("auth_token")
-    console.log("createLoggingSession ---->", token)
-    if (token) {
-      headers.authorization = `Bearer ${token}`
-    }
-    return this.http.get<any>(url, headers)
+    token && (headers.authorization = `Bearer ${token}`)
+    return this.http.get<any>(url, {headers})
   }
 }

@@ -44,6 +44,11 @@ import (
 
 var resourceWhiteList = WhiteList{"sessions", "proxy", "ws", "charts", "webkubectl", "apps", "mfa", "pod"}
 
+var sockjsUrls = []string{
+	"/kubepi/api/v1/ws/logging/sockjs/",
+	"/kubepi/api/v1/ws/terminal/sockjs/",
+}
+
 type WhiteList []string
 
 func (w WhiteList) In(name string) bool {
@@ -407,11 +412,25 @@ func WarpedJwtHandler() iris.Handler {
 		return new(session.UserProfile)
 	})
 	return func(ctx *context.Context) {
-		//sess := server.SessionMgr.Start(ctx)
-		//if sess.Get("profile") != nil {
-		//	ctx.Next()
-		//	return
-		//}
+		isSockjs := false
+		for _, url := range sockjsUrls {
+			if strings.Contains(ctx.Path(), url) {
+				isSockjs = true
+				break
+			}
+			if strings.HasPrefix(ctx.Path(), url) {
+				isSockjs = true
+				break
+			}
+		}
+
+		if isSockjs {
+			token := ctx.URLParam("token")
+			if token != "" {
+				ctx.Request().Header.Set("Authorization", strings.Join([]string{"Bearer", token}, " "))
+			}
+		}
+
 		verifyMiddleware(ctx)
 	}
 }
